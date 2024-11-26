@@ -1,0 +1,14 @@
+
+genrule(
+    name = "foo",
+    srcs = [],
+    outs = ["output1"],
+    cmd = "touch $@",
+)
+
+genrule(
+    name = "bar",
+    srcs = [":output1"],
+    outs = [":output2"],
+    cmd = "cp $(location :output1) $(location :output2)",
+)

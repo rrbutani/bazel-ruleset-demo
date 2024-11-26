@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "WORKSPACE.bzlmod": "starlark",
+        "MODULE.bazel.lock": "json",
+        "*.BUILD.bazel": "starlark",
+        "*.BUILD.bazel.tpl": "starlark",
+        "*.cquery": "starlark",
+    },
+
+    // Can still open files in `bazel-*`, `disk_cache`, etc. manually.
+    // but they won't appear in the file explorer and won't be searched.
+    "explorer.excludeGitIgnore": true,
+
+    // https://code.visualstudio.com/updates/v1_67#_explorer-file-nesting
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "MODULE.bazel": "WORKSPACE.bazel, REPO.bazel, WORKSPACE.bzlmod, .bazelrc, .bazelversion, .bazelignore, MODULE.bazel.lock",
+        "flake.nix": "flake.lock",
+    },
+
+    //
+    "bsv.bazel.enabled": false,
+    "bsv.bes.enabled": false,
+    "cSpell.enabled": false,
+}

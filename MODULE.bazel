@@ -1,0 +1,93 @@
+module(name = "ruleset-demo")
+
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# https://github.com/bazelbuild/bazel-central-registry/blob/0496b680650c0bb903cf20eae70284e586178515/modules/libcpuid/0.6.5/source.json
+# https://github.com/bazelbuild/bazel-central-registry/blob/0496b680650c0bb903cf20eae70284e586178515/modules/libcpuid/0.6.5/patches/add_build_file.patch
+http_archive(
+    name = "libcpuid",
+    url = "https://github.com/anrieff/libcpuid/releases/download/v0.6.5/libcpuid-0.6.5.tar.gz",
+    integrity = "sha256-mAClOdp+o3ucNugrBfUzv4X7FcXC0cJn135kAYVbzvs=",
+    strip_prefix = "libcpuid-0.6.5",
+    build_file_content = """
+
+load("@//rules_c:defs.bzl", "c_library", "c_binary")
+
+genrule(
+    name = "extra_header",
+    outs = ["extra_header.h"],
+    cmd = "echo > $@",
+)
+
+# workaround for not having `local_defines`..
+genrule(
+    name = "cpuid_main_with_embedded_defines",
+    outs = ["cpuid_main.c"],
+    srcs = [":libcpuid/cpuid_main.c"],
+    cmd = '''{
+        echo "#define _GNU_SOURCE";
+        echo "#define VERSION \\\\"0.6.1\\\\"";
+        cat $<;
+    } > $@''',
+)
+
+c_library(
+    name = "libcpuid",
+    sources = glob(
+        ["libcpuid/*.c"],
+        exclude = [
+            "libcpuid/msrdriver.c", # windows
+            "libcpuid/cpuid_main.c", # replaced!
+        ],
+    ) + [
+        ":cpuid_main.c",
+    ],
+    headers = [
+        "libcpuid/libcpuid.h",
+        "libcpuid/libcpuid_constants.h",
+        "libcpuid/libcpuid_types.h",
+    ],
+    private_headers = [
+        "libcpuid/amd_code_t.h",
+        "libcpuid/asm-bits.h",
+        "libcpuid/centaur_code_t.h",
+        "libcpuid/intel_code_t.h",
+        "libcpuid/libcpuid_internal.h",
+        "libcpuid/libcpuid_util.h",
+        "libcpuid/rdtsc.h",
+        "libcpuid/recog_amd.h",
+        "libcpuid/recog_centaur.h",
+        "libcpuid/recog_intel.h",
+        ":extra_header.h",
+    ],
+    includes = ["libcpuid"],
+    visibility = ["//visibility:public"],
+)
+""")
+
+# uh-oh, C++...
+http_archive(
+    name = "fmt",
+    url = "https://github.com/fmtlib/fmt/releases/download/11.0.2/fmt-11.0.2.zip",
+    integrity = "",
+    strip_prefix = "fmt-11.0.2",
+    build_file_content = """
+
+load("@//rules_c:defs.bzl", "c_library", "c_binary")
+
+# See: https://github.com/bazelbuild/bazel-central-registry/blob/dca6a9830d1c41adad579066ca98297b5a7bae30/modules/fmt/11.0.2/overlay/BUILD.bazel
+c_library(
+    name = "fmt",
+    sources = [
+        "src/format.cc",
+        "src/os.cc",
+    ],
+    headers = glob([
+        "include/fmt/*.h",
+    ]),
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+""")

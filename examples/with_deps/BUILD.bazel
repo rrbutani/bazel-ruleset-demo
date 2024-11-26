@@ -1,0 +1,76 @@
+load("//rules_c:defs.bzl", "c_library", "c_binary")
+
+[
+    genrule(
+        name = "{}_helper".format(name),
+        outs = ["{}_helper.c".format(name)],
+        cmd = "{ " + "; ".join([
+            """echo '#include "{}/{}.h"'""".format(package_name(), name),
+            "echo 'char {}_data[] = {{'".format(name.upper()),
+            "yes '  0x{N}{N},' | head -1000000 && :".format(N = name.upper()),
+            "echo '  0x{N}{N}'".format(N = name.upper()),
+            'echo "};"',
+        ]) + "; } > $@",
+    )
+    for name in ["a", "b", "c"]
+]
+
+genrule(
+    name = "generated_header",
+    outs = ["gen.h"],
+    cmd = "echo > $@",
+)
+
+# with deps:
+c_library(
+    name = "a",
+    sources = ["a.c", "a_helper.c"],
+    headers = ["a.h"],
+    private_headers = [":gen.h"],
+)
+
+c_library(
+    name = "b",
+    sources = ["b.c", "b_helper.c"],
+    headers = ["b.h"],
+)
+
+c_library(
+    name = "cpuid_example",
+    sources = ["cpuid_example.c"],
+    headers = ["cpuid_example.h"],
+    dependencies = ["@libcpuid"],
+)
+
+c_library(
+    name = "c",
+    sources = ["c.c", "c_helper.c"],
+    headers = ["c.h"],
+    includes = [".."],
+    dependencies = [":a", ":b", ":cpuid_example"],
+)
+
+c_binary(
+    name = "with_deps",
+    sources = ["with_deps.c"],
+    private_headers = ["with_deps.h"],
+    includes = ["."],
+    dependencies = [":a", ":c", "@libcpuid"],
+)
+
+# other binaries that use the same libraries:
+c_binary(
+    name = "a_example",
+    sources = ["a_bin.c"],
+    dependencies = [":a"],
+)
+c_binary(
+    name = "b_example",
+    sources = ["b_bin.c"],
+    dependencies = [":b"],
+)
+c_binary(
+    name = "c_example",
+    sources = ["c_bin.c"],
+    dependencies = [":c"],
+)

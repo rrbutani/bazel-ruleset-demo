@@ -1,0 +1,18 @@
+
+load("//rules_c:defs.bzl", "c_binary")
+
+# genrule
+genrule(
+    name = "generate_simple",
+    outs = ["generated_simple.c"],
+    cmd = "echo 'int main() { return {exit_code}; }' > $@".replace(
+        "{exit_code}", str(10),
+    ),
+)
+
+# 1 file, no deps:
+c_binary(
+    name = "simple",
+    sources = ["simple.c"],
+    # sources = ["generated_simple.c"],
+)

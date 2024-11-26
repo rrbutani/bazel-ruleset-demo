@@ -1,0 +1,20 @@
+
+# path mapping: https://github.com/bazelbuild/bazel/discussions/22658
+common --experimental_output_paths=strip
+common --modify_execution_info=CCompile=+supports-path-mapping
+common --modify_execution_info=CLink=+supports-path-mapping
+
+common --action_env=CC # set to path to `clang`
+# Can't use `incompatible_strict_action_env`; we want to pick up `$PATH`
+common --incompatible_strict_action_env=false
+
+# TODO: path mapping `strip` doesn't work right with external paths when using
+# sibling repository layout?
+common --experimental_sibling_repository_layout=false
+# common --disk_cache=./disk_cache
+
+# TODO: still not getting the hit rates we expect for path mapping...
+
+# query opts
+query --output=graph --graph:factored --noimplicit_deps
+cquery --output=graph --graph:factored --noimplicit_deps
